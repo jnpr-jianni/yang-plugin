@@ -46,7 +46,7 @@ object YangPlugin extends Plugin
         }.getOrElse(targetBaseDir)
         val baseArgs = Seq("-p", getYangDependencies(dependencyModules, moduleRoot), "-f", "jnc", "-d", targetDir.getAbsolutePath + "/mo", "--jnc-no-pkginfo", "--jnc-classpath-schema-loading")
         srcFiles map { file =>
-            println("generating :" + file.toString)
+            println("generating jnc:" + file.toString)
             val args = baseArgs ++ Seq(file.toString)
             val exitCode = Process("pyang", args) ! log
             if (exitCode != 0) sys.error(s"pyang failed with exit code $exitCode")
@@ -54,7 +54,7 @@ object YangPlugin extends Plugin
 
         val jrcArgs = Seq("-p", getYangDependencies(dependencyModules, moduleRoot), "-f", "jrc", "-d", targetDir.getAbsolutePath + "/api", "--jrc-no-pkginfo", "--jrc-classpath-schema-loading")
         srcFiles map { file =>
-            println("generating :" + file.toString)
+            println("generating jrc:" + file.toString)
             val args = jrcArgs ++ Seq(file.toString)
             val exitCode = Process("pyang", args) ! log
             if (exitCode != 0) sys.error(s"pyang failed with exit code $exitCode")
@@ -92,15 +92,13 @@ object YangPlugin extends Plugin
         val dArr = ArrayBuffer[String]()
         //add dependency path
         dArr += System.getProperty("user.home") + "/.yang"
-
-        println("---------------------------------------------") + baseDirectory.toString
+        val baseDir = moduleRoot.substring(0, moduleRoot.lastIndexOf("/"))
         //add dependency module paths
         for (module <- modules)
-            dArr += baseDirectory.toString + "/" + module.name + "/src/main/resources/yang"
+            dArr += baseDir + "/" + module.name + "/src/main/resources/yang"
 
         //add current module path
         dArr += moduleRoot + "/src/main/resources/yang"
-
         dArr.mkString(":")
     }
 
