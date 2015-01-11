@@ -92,15 +92,17 @@ object YangPlugin extends Plugin
         //add dependency path
         dArr += System.getProperty("user.home") + "/.yang"
 
+        println("---------------------------------------------") + baseDirectory.toString
         //add dependency module paths
         for (module <- modules)
-            dArr += root.base.getAbsolutePath + "/" + module.name + "/src/main/resources/yang"
+            dArr += baseDirectory.toString + "/" + module.name + "/src/main/resources/yang"
 
         //add current module path
         dArr += moduleRoot + "/src/main/resources/yang"
 
         dArr.mkString(":")
     }
+
 
     val yangSettings = inConfig(Yang)(Seq(
         resourceDirectory <<= (resourceDirectory in Compile) {_ / "yang"},
