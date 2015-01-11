@@ -1,9 +1,10 @@
+package net.juniper.yang
+
 import java.io.File
 import java.util.jar.JarFile
 import sbt.Keys._
 import sbt._
 import scala.collection.JavaConversions._
-
 import scala.collection.mutable.ArrayBuffer
 
 object YangPlugin extends Plugin
