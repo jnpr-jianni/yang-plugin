@@ -10,6 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 object YangPlugin extends Plugin
 {
     val yangPackageName = SettingKey[Option[String]]("yang-package-name")
+    val routesTraitName = SettingKey[Option[String]]("route-trait-name")
 
     /**
      * Generate code from YANG via JNC
@@ -21,15 +22,26 @@ object YangPlugin extends Plugin
         val cachedCompile = FileFunction.cached(streams.value.cacheDirectory / "yang", FilesInfo.lastModified, FilesInfo.exists) {
             in: Set[File] =>
                 extractYangDependencies((managedClasspath in Runtime).value ++ (unmanagedClasspath in Runtime).value, streams.value.log)
-                runJncGen(
+                val packageName = (yangPackageName in Yang).value
+                val targetBaseDir = (javaSource in Yang).value
+                val routesTrait = (routesTraitName in Yang).value
+                if(packageName.isEmpty)
+                    sys.error("Package Name can't be null, configure it like 'net.juniper.yang'")
+                if(routesTrait.isEmpty)
+                    sys.error("Route Trait Name can't be null, configure it like {ModuleName}AllRoutes")
+
+                val files = runJncGen(
                     srcFiles = in,
                     srcDir = (resourceDirectory in Yang).value,
-                    targetBaseDir = (javaSource in Yang).value,
+                    targetBaseDir = targetBaseDir,
                     log = streams.value.log,
-                    packageName = (yangPackageName in Yang).value,
+                    packageName = packageName,
                     dependencyModules = (projectDependencies in Compile).value,
                     moduleRoot = baseDirectory.value.getAbsolutePath
                 )
+                //Generate a route aggregation trait with all routers.
+                RoutesGenerator.generate(targetBaseDir.getAbsolutePath, packageName.get, routesTrait.get)
+                files
         }
         cachedCompile(((resourceDirectory in Yang).value ** "*.yang").get.toSet).toSeq
     }
@@ -107,7 +119,8 @@ object YangPlugin extends Plugin
         resourceDirectory <<= (resourceDirectory in Compile) {_ / "yang"},
         javaSource <<= sourceManaged in Compile,
         yangGenerate <<= yangGeneratorTask,
-        yangPackageName <<= yangPackageName in Yang
+        yangPackageName <<= yangPackageName in Yang,
+        routesTraitName <<= routesTraitName in Yang
     )) ++ Seq(
         managedSourceDirectories in Compile <+= (javaSource in Yang),
         sourceGenerators in Compile <+= (yangGenerate in Yang),
